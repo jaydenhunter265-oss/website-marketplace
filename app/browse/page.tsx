@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
-import { sampleListings, Listing } from '../../lib/data';
+import type { Listing } from '../../lib/data';
 
 const categories = ['All', 'SaaS', 'eCommerce', 'Content', 'Marketplace'];
 const sortOptions = [
@@ -175,13 +175,31 @@ function ListingCard({ listing }: { listing: Listing }) {
 }
 
 export default function BrowsePage() {
+  const [listings, setListings]         = useState<Listing[]>([]);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [fetchError, setFetchError]     = useState('');
+
   const [activeCategory, setActiveCategory] = useState('All');
-  const [sortBy, setSortBy] = useState('price-desc');
-  const [maxPrice, setMaxPrice] = useState(300000);
-  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy]                 = useState('price-desc');
+  const [maxPrice, setMaxPrice]             = useState(300000);
+  const [search, setSearch]                 = useState('');
+
+  useEffect(() => {
+    fetch('/api/listings')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setListings(data);
+        } else {
+          setFetchError('Failed to load listings');
+        }
+      })
+      .catch(() => setFetchError('Failed to load listings'))
+      .finally(() => setFetchLoading(false));
+  }, []);
 
   const filtered = useMemo(() => {
-    let list = [...sampleListings];
+    let list = [...listings];
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -242,10 +260,10 @@ export default function BrowsePage() {
           {/* Stats strip */}
           <div className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-6">
             {[
-              { label: 'Active Listings', value: `${sampleListings.length}` },
-              { label: 'Total Value', value: `$${(sampleListings.reduce((s, l) => s + l.askingPrice, 0) / 1000).toFixed(0)}k` },
-              { label: 'Avg. Margin', value: `${(sampleListings.reduce((s, l) => s + l.profitMargin, 0) / sampleListings.length).toFixed(0)}%` },
-              { label: 'Avg. Growth Score', value: `${Math.round(sampleListings.reduce((s, l) => s + l.growthScore, 0) / sampleListings.length)}` },
+              { label: 'Active Listings', value: fetchLoading ? '—' : `${listings.length}` },
+              { label: 'Total Value', value: fetchLoading ? '—' : `$${(listings.reduce((s, l) => s + l.askingPrice, 0) / 1000).toFixed(0)}k` },
+              { label: 'Avg. Margin', value: fetchLoading || listings.length === 0 ? '—' : `${(listings.reduce((s, l) => s + l.profitMargin, 0) / listings.length).toFixed(0)}%` },
+              { label: 'Avg. Growth Score', value: fetchLoading || listings.length === 0 ? '—' : `${Math.round(listings.reduce((s, l) => s + l.growthScore, 0) / listings.length)}` },
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
                 <p className="text-xl font-bold"
@@ -363,14 +381,37 @@ export default function BrowsePage() {
           </Link>
         </div>
 
+        {/* Loading state */}
+        {fetchLoading && (
+          <div className="flex items-center justify-center py-24">
+            <p className="text-sm text-zinc-600">Loading listings…</p>
+          </div>
+        )}
+
+        {/* Fetch error */}
+        {!fetchLoading && fetchError && (
+          <div
+            className="rounded-2xl border px-6 py-8 text-center"
+            style={{ borderColor: 'rgba(255,60,60,0.2)', background: 'rgba(255,60,60,0.04)' }}
+          >
+            <p className="text-sm text-rose-400">{fetchError}</p>
+            <button
+              onClick={() => { setFetchLoading(true); setFetchError(''); fetch('/api/listings').then(r => r.json()).then(d => { if (Array.isArray(d)) setListings(d); else setFetchError('Failed to load listings'); }).catch(() => setFetchError('Failed to load listings')).finally(() => setFetchLoading(false)); }}
+              className="mt-3 text-xs uppercase tracking-[0.2em] text-zinc-500 underline underline-offset-4 hover:text-zinc-300"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Grid */}
-        {filtered.length > 0 ? (
+        {!fetchLoading && !fetchError && filtered.length > 0 ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
-        ) : (
+        ) : !fetchLoading && !fetchError ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border py-24 text-center"
             style={{ borderColor: 'rgba(120,120,120,0.1)', background: 'rgba(10,10,10,0.5)' }}
           >
@@ -383,7 +424,7 @@ export default function BrowsePage() {
               Reset filters
             </button>
           </div>
-        )}
+        ) : null}
       </div>
     </main>
   );

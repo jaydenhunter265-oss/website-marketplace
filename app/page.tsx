@@ -135,6 +135,22 @@ export default function HomePage() {
   const [selectedListingId, setSelectedListingId] = useState<string>(sampleListings[0]?.id ?? '');
   const listingCounterRef = useRef(sampleListings.length + 1);
 
+  // Seed initial listings from the real database; fall back to sample data if
+  // the API isn't reachable (e.g. no .env.local configured yet).
+  useEffect(() => {
+    fetch('/api/listings')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setListings(data);
+          setSelectedListingId(data[0].id);
+          listingCounterRef.current = data.length + 1;
+        }
+      })
+      .catch(() => { /* keep sample data */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const liveSummary = useMemo(() => {
     const totalRevenue = listings.reduce((sum, item) => sum + item.monthlyRevenue, 0);
     return { totalRevenue, activeListings: listings.length };

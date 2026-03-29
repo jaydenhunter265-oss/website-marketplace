@@ -101,6 +101,8 @@ function ChipSelect({
 export default function SellPage() {
   const [step, setStep] = useState<Step>(1);
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Step 1 — website info
   const [websiteName, setWebsiteName] = useState('');
@@ -109,6 +111,13 @@ export default function SellPage() {
   const [techStack, setTechStack] = useState('');
   const [description, setDescription] = useState('');
   const [age, setAge] = useState('');
+
+  // Image upload
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageError, setImageError] = useState('');
 
   // Step 2 — financials
   const [revenueRange, setRevenueRange] = useState('');
@@ -131,9 +140,64 @@ export default function SellPage() {
     return name.trim() && email.trim();
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setImageError('');
+    setImageUploading(true);
+
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      setImageUrl(data.url);
+    } catch (err: unknown) {
+      setImageError(err instanceof Error ? err.message : 'Image upload failed');
+      setImageFile(null);
+      setImagePreview('');
+    } finally {
+      setImageUploading(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          websiteName, websiteUrl, category, techStack, description, age,
+          revenueRange, monthlyRevenue, monthlyProfit, monthlyTraffic,
+          monetization, askingPrice,
+          name, email, telegram, notes,
+          imageUrl: imageUrl || null,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('You must be logged in to submit a listing. Please sign in and try again.');
+        }
+        throw new Error(data.error || 'Failed to submit listing');
+      }
+
+      setSubmitted(true);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (submitted) {
@@ -351,6 +415,43 @@ export default function SellPage() {
                   </Field>
                 </div>
 
+                {/* Screenshot / logo upload */}
+                <Field label="Screenshot or Logo" hint="Optional. JPEG, PNG, or WebP — max 5 MB.">
+                  <div className="space-y-3">
+                    <label
+                      className="flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition hover:border-zinc-500"
+                      style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(120,120,120,0.15)' }}
+                    >
+                      <span className="text-xs text-zinc-500">
+                        {imageUploading ? 'Uploading…' : imageFile ? imageFile.name : 'Choose file…'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={handleImageChange}
+                        disabled={imageUploading}
+                      />
+                    </label>
+                    {imagePreview && (
+                      <div className="relative h-32 w-full overflow-hidden rounded-xl border"
+                        style={{ borderColor: 'rgba(120,120,120,0.15)' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+                        {imageUploading && (
+                          <div className="absolute inset-0 flex items-center justify-center"
+                            style={{ background: 'rgba(0,0,0,0.6)' }}>
+                            <span className="text-xs text-zinc-300">Uploading…</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {imageError && (
+                      <p className="text-xs text-rose-400">{imageError}</p>
+                    )}
+                  </div>
+                </Field>
+
                 <Field label="Category" required>
                   <ChipSelect options={categories} value={category} onChange={setCategory} />
                 </Field>
@@ -507,6 +608,16 @@ export default function SellPage() {
               </div>
             )}
 
+            {/* Global error banner */}
+            {error && (
+              <div
+                className="mt-6 rounded-xl border px-4 py-3 text-xs text-rose-400"
+                style={{ background: 'rgba(255,60,60,0.06)', borderColor: 'rgba(255,60,60,0.2)' }}
+              >
+                {error}
+              </div>
+            )}
+
             {/* Navigation buttons */}
             <div className="mt-8 flex items-center justify-between border-t pt-6"
               style={{ borderColor: 'rgba(120,120,120,0.1)' }}
@@ -543,17 +654,17 @@ export default function SellPage() {
               ) : (
                 <button
                   type="submit"
-                  disabled={!canProceed() || !nda}
+                  disabled={!canProceed() || !nda || loading || imageUploading}
                   className="rounded-full px-8 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] transition-all duration-200 disabled:opacity-30"
                   style={{
-                    background: canProceed() && nda
+                    background: canProceed() && nda && !loading
                       ? 'linear-gradient(135deg, #d0d0d0 0%, #909090 50%, #686868 100%)'
                       : 'rgba(120,120,120,0.2)',
-                    color: canProceed() && nda ? '#050505' : '#555',
-                    boxShadow: canProceed() && nda ? '0 0 24px rgba(180,180,180,0.25)' : 'none',
+                    color: canProceed() && nda && !loading ? '#050505' : '#555',
+                    boxShadow: canProceed() && nda && !loading ? '0 0 24px rgba(180,180,180,0.25)' : 'none',
                   }}
                 >
-                  Submit Application
+                  {loading ? 'Submitting…' : 'Submit Application'}
                 </button>
               )}
             </div>
