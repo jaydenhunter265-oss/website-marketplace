@@ -345,7 +345,7 @@ export default function SellPage() {
                     <input value={websiteName} onChange={(e) => setWebsiteName(e.target.value)}
                       placeholder="e.g. PulseSaaS.io" className={inputCls} style={inputStyle} required />
                   </Field>
-                  <Field label="Website URL" hint="We won't make this public until listing is approved.">
+                  <Field label="Website URL" hint="We will not make this public until listing is approved.">
                     <input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)}
                       placeholder="https://yoursite.com" className={inputCls} style={inputStyle} type="url" />
                   </Field>
@@ -481,7 +481,7 @@ export default function SellPage() {
                     className="mt-0.5 h-4 w-4 rounded border-zinc-700 bg-transparent accent-zinc-400"
                   />
                   <span className="text-xs text-zinc-500 leading-relaxed">
-                    I agree to FuturiMarket's seller terms. I confirm that all financial information submitted is accurate
+                    I agree to FuturiMarket&apos;s seller terms. I confirm that all financial information submitted is accurate
                     and verifiable. I understand that misrepresentation may result in removal from the platform.
                   </span>
                 </label>
