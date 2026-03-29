@@ -1,10 +1,10 @@
 ﻿import Link from 'next/link';
 
 const navLinks = [
-  { label: 'Explore', href: '#' },
-  { label: 'Sell', href: '#' },
+  { label: 'Browse', href: '/browse' },
+  { label: 'Sell', href: '/sell' },
   { label: 'Dashboard', href: '#' },
-  { label: 'Messages', href: '#' }
+  { label: 'Messages', href: '#' },
 ];
 
 export default function Navbar() {
@@ -36,7 +36,7 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link href="#" className="glow-button button-pulse rounded-full px-6 py-3 text-sm font-semibold">
+            <Link href="/sell" className="silver-cta-btn button-pulse rounded-full px-6 py-3 text-sm font-semibold">
               List Website
             </Link>
           </div>
