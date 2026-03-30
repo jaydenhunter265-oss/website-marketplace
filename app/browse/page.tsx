@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import type { Listing } from '../../lib/data';
 
@@ -36,13 +37,15 @@ function GrowthBar({ score }: { score: number }) {
 }
 
 function ListingCard({ listing }: { listing: Listing }) {
+  const router = useRouter();
   const [hovered, setHovered] = useState(false);
 
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="listing-card group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition-all duration-300"
+      onClick={() => router.push(`/browse/${listing.id}`)}
+      className="listing-card group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition-all duration-300 cursor-pointer"
       style={{
         background: hovered
           ? 'linear-gradient(145deg, rgba(22,22,22,0.98) 0%, rgba(14,14,14,0.99) 100%)'
@@ -157,7 +160,9 @@ function ListingCard({ listing }: { listing: Listing }) {
           <p className="text-[0.62rem] text-zinc-600">{listing.seller}</p>
           <p className="text-[0.62rem] text-zinc-600">{listing.techStack}</p>
         </div>
-        <button
+        <Link
+          href={`/browse/${listing.id}`}
+          onClick={(e) => e.stopPropagation()}
           className="silver-btn rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-200"
           style={{
             background: hovered
@@ -168,7 +173,7 @@ function ListingCard({ listing }: { listing: Listing }) {
           }}
         >
           View Asset
-        </button>
+        </Link>
       </div>
     </div>
   );
