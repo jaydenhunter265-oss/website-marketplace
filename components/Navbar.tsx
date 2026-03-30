@@ -10,34 +10,40 @@ export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
+    function onScroll() { setScrolled(window.scrollY > 24); }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
     setMenuOpen(false);
+    setMobileOpen(false);
     router.push('/');
     router.refresh();
   }
@@ -45,99 +51,61 @@ export default function Navbar() {
   const initial = user?.email?.[0]?.toUpperCase() ?? '?';
 
   return (
-    <header className="panel rounded-[32px] border border-white/10 p-6 backdrop-blur-xl">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-br from-cyan-400 to-indigo-500 shadow-glow">
-            <span className="text-lg font-semibold text-slate-950">FM</span>
-          </div>
-          <div>
-            <p className="text-sm uppercase tracking-[0.35em] text-cyan-200/80">FuturiMarket</p>
-            <h1 className="text-xl font-semibold text-white">Digital Asset Exchange</h1>
-          </div>
-        </Link>
+    <header className={`navbar-glass fixed left-0 right-0 top-0 z-50 ${scrolled ? 'navbar-scrolled' : ''}`}>
+      <div className="mx-auto max-w-[1720px] px-6 py-3">
+        <div className="flex items-center justify-between gap-6">
 
-        <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          {/* Nav links */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Link href="/browse" className="text-sm text-slate-300 transition hover:text-cyan-200">
-              Browse
-            </Link>
-            <Link href="/sell" className="text-sm text-slate-300 transition hover:text-cyan-200">
-              Sell
-            </Link>
-            {user && (
-              <Link href="/dashboard" className="text-sm text-slate-300 transition hover:text-cyan-200">
-                Dashboard
-              </Link>
-            )}
-          </div>
+          {/* ── Logo ── */}
+          <Link href="/" className="flex items-center gap-3 flex-shrink-0">
+            <div className="navbar-logo flex h-10 w-10 items-center justify-center rounded-2xl">
+              <span className="text-sm font-extrabold tracking-tight" style={{ color: '#080808' }}>FM</span>
+            </div>
+            <span className="chrome-text text-lg font-extrabold tracking-tight hidden sm:block">
+              FuturiMarket
+            </span>
+          </Link>
 
-          {/* Auth section */}
-          <div className="flex items-center gap-3">
+          {/* ── Desktop Nav ── */}
+          <nav className="hidden lg:flex items-center gap-7">
+            <Link href="/browse"     className="nav-link">Marketplace</Link>
+            <Link href="/sell"       className="nav-link">Sell</Link>
+            <a href="#how-it-works"  className="nav-link">How It Works</a>
+            <a href="#why-us"        className="nav-link">Why Us</a>
+            <a href="#about"         className="nav-link">About</a>
+          </nav>
+
+          {/* ── Auth + CTA ── */}
+          <div className="hidden lg:flex items-center gap-4">
             {user ? (
               <div className="relative" ref={menuRef}>
-                {/* Avatar button */}
                 <button
-                  onClick={() => setMenuOpen((o) => !o)}
-                  className="flex items-center gap-2.5 rounded-full border px-3 py-1.5 transition-all duration-200 hover:border-zinc-500"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    borderColor: 'rgba(120,120,120,0.2)',
-                  }}
+                  onClick={() => setMenuOpen(o => !o)}
+                  className="flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 transition hover:border-white/18 hover:bg-white/[0.06]"
                 >
-                  <span
-                    className="flex h-6 w-6 items-center justify-center rounded-full text-[0.65rem] font-bold"
-                    style={{
-                      background: 'linear-gradient(135deg, #c0c0c0 0%, #888 100%)',
-                      color: '#050505',
-                    }}
-                  >
+                  <span className="chrome-avatar flex h-6 w-6 items-center justify-center rounded-full text-[0.65rem] font-bold text-black">
                     {initial}
                   </span>
-                  <span className="max-w-[140px] truncate text-xs text-zinc-400">
-                    {user.email}
-                  </span>
+                  <span className="max-w-[120px] truncate text-xs text-zinc-400">{user.email}</span>
                   <svg
-                    className={`h-3 w-3 text-zinc-600 transition-transform ${menuOpen ? 'rotate-180' : ''}`}
+                    className={`h-3 w-3 text-zinc-500 transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`}
                     fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
-                {/* Dropdown */}
                 {menuOpen && (
-                  <div
-                    className="absolute right-0 top-full z-50 mt-2 w-48 rounded-2xl border py-1 shadow-2xl"
-                    style={{
-                      background: 'rgba(12,12,12,0.98)',
-                      borderColor: 'rgba(120,120,120,0.15)',
-                      boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)',
-                    }}
-                  >
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setMenuOpen(false)}
-                      className="block px-4 py-2.5 text-xs text-zinc-400 transition hover:text-zinc-200"
-                    >
+                  <div className="dropdown-glass absolute right-0 top-full z-50 mt-2 w-48 rounded-2xl py-1 shadow-2xl">
+                    <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="dropdown-item">
                       My Dashboard
                     </Link>
-                    <Link
-                      href="/sell"
-                      onClick={() => setMenuOpen(false)}
-                      className="block px-4 py-2.5 text-xs text-zinc-400 transition hover:text-zinc-200"
-                    >
+                    <Link href="/sell" onClick={() => setMenuOpen(false)} className="dropdown-item">
                       List a Website
                     </Link>
-                    <div
-                      className="my-1 mx-3 h-px"
-                      style={{ background: 'rgba(120,120,120,0.1)' }}
-                    />
+                    <div className="mx-3 my-1 h-px bg-white/[0.06]" />
                     <button
                       onClick={handleSignOut}
-                      className="block w-full px-4 py-2.5 text-left text-xs text-rose-400/80 transition hover:text-rose-300"
+                      className="dropdown-item w-full text-left text-rose-400/80 hover:text-rose-300"
                     >
                       Sign out
                     </button>
@@ -145,23 +113,56 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <>
-                <Link
-                  href="/auth/login"
-                  className="text-sm text-slate-300 transition hover:text-cyan-200"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="silver-cta-btn button-pulse rounded-full px-6 py-3 text-sm font-semibold"
-                >
-                  Register
-                </Link>
-              </>
+              <Link href="/auth/login" className="nav-link">Sign in</Link>
             )}
+
+            <Link href="/browse" className="chrome-btn px-5 py-2.5 text-sm">
+              Browse Listings
+            </Link>
           </div>
+
+          {/* ── Mobile Hamburger ── */}
+          <button
+            onClick={() => setMobileOpen(o => !o)}
+            className="flex flex-col gap-[5px] p-1 lg:hidden"
+            aria-label="Toggle menu"
+          >
+            <span className={`hamburger-line ${mobileOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
+            <span className={`hamburger-line ${mobileOpen ? 'opacity-0 scale-x-0' : ''}`} />
+            <span className={`hamburger-line ${mobileOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
+          </button>
         </div>
+
+        {/* ── Mobile Menu ── */}
+        {mobileOpen && (
+          <div className="mobile-menu-glass mt-3 rounded-2xl p-4 lg:hidden">
+            <nav className="flex flex-col gap-1">
+              <Link href="/browse"    onClick={() => setMobileOpen(false)} className="mobile-nav-link">Marketplace</Link>
+              <Link href="/sell"      onClick={() => setMobileOpen(false)} className="mobile-nav-link">Sell</Link>
+              <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="mobile-nav-link">How It Works</a>
+              <a href="#why-us"       onClick={() => setMobileOpen(false)} className="mobile-nav-link">Why Us</a>
+
+              <div className="my-2 h-px bg-white/[0.06]" />
+
+              {user ? (
+                <>
+                  <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="mobile-nav-link">Dashboard</Link>
+                  <button onClick={handleSignOut} className="mobile-nav-link text-left text-rose-400">Sign out</button>
+                </>
+              ) : (
+                <Link href="/auth/login" onClick={() => setMobileOpen(false)} className="mobile-nav-link">Sign in</Link>
+              )}
+
+              <Link
+                href="/browse"
+                onClick={() => setMobileOpen(false)}
+                className="chrome-btn mt-3 py-3 text-sm text-center"
+              >
+                Browse Listings
+              </Link>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
