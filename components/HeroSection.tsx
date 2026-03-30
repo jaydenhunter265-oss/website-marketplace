@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import CloudinaryGridBackground from './CloudinaryGridBackground';
 
 type HeroSectionProps = {
   summary: { totalRevenue: number; activeListings: number };
@@ -30,6 +31,7 @@ export default function HeroSection({ summary }: HeroSectionProps) {
     <section className="hero-section">
       {/* ── Animated background ── */}
       <div className="hero-bg" aria-hidden="true">
+        <CloudinaryGridBackground />
         <div className="hero-radial-1" />
         <div className="hero-radial-2" />
         <div className="hero-streak hero-streak-1" />
@@ -109,7 +111,7 @@ export default function HeroSection({ summary }: HeroSectionProps) {
 
         {/* ── CTAs ── */}
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <a href="#listings" className="chrome-btn px-9 py-4 text-[0.9375rem]">
+          <a href="/browse" className="chrome-btn px-9 py-4 text-[0.9375rem]">
             Explore Listings
           </a>
           <a href="/sell" className="ghost-btn px-9 py-4 text-[0.9375rem]">

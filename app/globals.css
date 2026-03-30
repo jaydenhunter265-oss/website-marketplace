@@ -243,6 +243,69 @@ body::before {
   overflow: hidden;
 }
 
+/* Cloudinary-powered futuristic visual layer */
+.cloudinary-grid-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  --grid-x: 50%;
+  --grid-y: 42%;
+}
+
+.cloudinary-layer {
+  position: absolute;
+  inset: -8%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.cloudinary-layer-main {
+  opacity: 0.22;
+  filter: hue-rotate(158deg) saturate(1.45) brightness(0.52) contrast(1.1);
+  animation: cloudDriftA 28s ease-in-out infinite alternate;
+}
+
+.cloudinary-layer-alt {
+  opacity: 0.12;
+  filter: hue-rotate(198deg) saturate(1.35) brightness(0.48) contrast(1.15);
+  transform: scale(1.08);
+  animation: cloudDriftB 36s ease-in-out infinite alternate;
+}
+
+.cloudinary-grid-plane {
+  position: absolute;
+  inset: -20% -12% -15%;
+  background-image:
+    linear-gradient(to right, rgba(93, 184, 255, 0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(93, 184, 255, 0.16) 1px, transparent 1px);
+  background-size: 62px 62px;
+  transform: perspective(1200px) rotateX(66deg) translateY(32%);
+  transform-origin: center bottom;
+  opacity: 0.33;
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.95) 28%, transparent 88%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.95) 28%, transparent 88%);
+  animation: gridScroll 24s linear infinite;
+}
+
+.cloudinary-grid-highlight {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(520px circle at var(--grid-x) var(--grid-y), rgba(82, 188, 255, 0.26), transparent 68%);
+  mix-blend-mode: screen;
+}
+
+.cloudinary-scan-lines {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to bottom, rgba(120, 216, 255, 0.05), transparent 45%);
+  background-size: 100% 6px;
+  opacity: 0.42;
+  animation: scanlineMove 10s linear infinite;
+}
+
 /* Large ambient radials */
 .hero-radial-1 {
   position: absolute;
@@ -783,6 +846,26 @@ input[type='range']::-moz-range-thumb {
 @keyframes countUp {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cloudDriftA {
+  0% { transform: scale(1.03) translate3d(-2%, -1%, 0); }
+  100% { transform: scale(1.12) translate3d(3%, 2%, 0); }
+}
+
+@keyframes cloudDriftB {
+  0% { transform: scale(1.09) translate3d(4%, -1%, 0); }
+  100% { transform: scale(1.18) translate3d(-3%, 2%, 0); }
+}
+
+@keyframes gridScroll {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 62px 0, 0 62px; }
+}
+
+@keyframes scanlineMove {
+  from { background-position: 0 0; }
+  to { background-position: 0 6px; }
 }
 
 /* ─── Responsive ─────────────────────────────────────────────── */

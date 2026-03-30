@@ -25,8 +25,8 @@ const cols = [
     links: [
       { label: 'Buyer Resources',     href: '/browse'    },
       { label: 'Due Diligence Guide', href: '/browse'    },
-      { label: 'AI Match Engine',     href: '#listings'  },
-      { label: 'Deal Room',           href: '#listings'  },
+      { label: 'AI Match Engine',     href: '/browse'    },
+      { label: 'Deal Room',           href: '/browse'    },
     ],
   },
   {

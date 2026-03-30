@@ -15,6 +15,17 @@ const sortOptions = [
   { label: 'Best Margin', value: 'margin-desc' },
 ];
 
+function mapPriceParamToMax(priceParam: string | null): number | null {
+  if (!priceParam) return null;
+
+  if (priceParam.includes('Under')) return 50000;
+  if (priceParam.includes('50K') && priceParam.includes('100K')) return 100000;
+  if (priceParam.includes('100K') && priceParam.includes('250K')) return 250000;
+  if (priceParam.includes('250K')) return 300000;
+
+  return null;
+}
+
 const riskColors = {
   Low: 'text-emerald-300 border-emerald-400/30 bg-emerald-400/8',
   Moderate: 'text-amber-300 border-amber-400/30 bg-amber-400/8',
@@ -201,6 +212,19 @@ export default function BrowsePage() {
       })
       .catch(() => setFetchError('Failed to load listings'))
       .finally(() => setFetchLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    const q = query.get('q') ?? '';
+    const categoryFromQuery = query.get('category');
+    const priceFromQuery = query.get('price');
+
+    setSearch(q);
+    setActiveCategory(categoryFromQuery && categories.includes(categoryFromQuery) ? categoryFromQuery : 'All');
+
+    const parsedMaxPrice = mapPriceParamToMax(priceFromQuery);
+    setMaxPrice(parsedMaxPrice ?? 300000);
   }, []);
 
   const filtered = useMemo(() => {
