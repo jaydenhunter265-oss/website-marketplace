@@ -123,6 +123,17 @@ function createFeedEntry(): FeedEntry {
 }
 
 export default function HomePage() {
+  // Supabase sometimes drops ?code= on the root URL instead of /auth/callback.
+  // Catch it here and forward it so the session gets established correctly.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      window.location.replace(`/auth/callback?code=${encodeURIComponent(code)}`);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [listings, setListings] = useState(sampleListings);
   const [feed, setFeed] = useState(initialFeed);
   const [justListedIds, setJustListedIds] = useState<string[]>([]);
