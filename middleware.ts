@@ -2,6 +2,9 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const PROTECTED_ROUTES  = ['/sell', '/dashboard', '/admin'];
+const AUTH_ROUTES       = ['/auth/login', '/auth/signup'];
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -14,7 +17,6 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // Forward cookie updates to both the request and response
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
@@ -32,20 +34,20 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect /sell — redirect unauthenticated users to login
-  if (!user && request.nextUrl.pathname.startsWith('/sell')) {
+  const { pathname } = request.nextUrl;
+
+  // Redirect unauthenticated users away from protected pages
+  const isProtected = PROTECTED_ROUTES.some((p) => pathname.startsWith(p));
+  if (!user && isProtected) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/auth/login';
-    loginUrl.searchParams.set('redirectTo', request.nextUrl.pathname);
+    loginUrl.searchParams.set('redirectTo', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   // Redirect logged-in users away from auth pages
-  if (
-    user &&
-    (request.nextUrl.pathname.startsWith('/auth/login') ||
-      request.nextUrl.pathname.startsWith('/auth/signup'))
-  ) {
+  const isAuthPage = AUTH_ROUTES.some((p) => pathname.startsWith(p));
+  if (user && isAuthPage) {
     const home = request.nextUrl.clone();
     home.pathname = '/';
     return NextResponse.redirect(home);
@@ -55,5 +57,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/sell', '/auth/login', '/auth/signup'],
+  matcher: ['/sell', '/dashboard', '/admin', '/auth/login', '/auth/signup'],
 };

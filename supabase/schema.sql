@@ -129,3 +129,47 @@ drop policy if exists "Buyers can cancel their own orders" on public.orders;
 create policy "Buyers can cancel their own orders"
   on public.orders for update
   using (auth.uid() = buyer_id);
+
+
+-- ── Stripe + Admin additions ──────────────────────────────────
+-- Run these after the base schema if upgrading an existing project.
+
+-- Add admin flag to users
+alter table public.users add column if not exists is_admin boolean default false;
+
+-- Add Stripe payment fields to orders
+alter table public.orders add column if not exists stripe_session_id text;
+alter table public.orders add column if not exists amount_paid numeric;
+
+-- Admins can view ALL listings (including sold/pending/removed)
+drop policy if exists "Admins can view all listings" on public.listings;
+create policy "Admins can view all listings"
+  on public.listings for select
+  using (exists (select 1 from public.users where id = auth.uid() and is_admin = true));
+
+-- Admins can update any listing (e.g. change status, remove)
+drop policy if exists "Admins can update any listing" on public.listings;
+create policy "Admins can update any listing"
+  on public.listings for update
+  using (exists (select 1 from public.users where id = auth.uid() and is_admin = true));
+
+-- Admins can delete any listing
+drop policy if exists "Admins can delete any listing" on public.listings;
+create policy "Admins can delete any listing"
+  on public.listings for delete
+  using (exists (select 1 from public.users where id = auth.uid() and is_admin = true));
+
+-- Admins can view all orders
+drop policy if exists "Admins can view all orders" on public.orders;
+create policy "Admins can view all orders"
+  on public.orders for select
+  using (exists (select 1 from public.users where id = auth.uid() and is_admin = true));
+
+-- Admins can view all user profiles
+drop policy if exists "Admins can view all users" on public.users;
+create policy "Admins can view all users"
+  on public.users for select
+  using (exists (select 1 from public.users where id = auth.uid() and is_admin = true));
+
+-- ── To make a user an admin (run in SQL editor) ───────────────
+-- update public.users set is_admin = true where email = 'admin@yourdomain.com';
