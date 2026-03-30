@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '../../../components/Navbar';
 import { createClient } from '../../../lib/supabase';
@@ -42,15 +42,12 @@ function StatBox({ label, value }: { label: string; value: string }) {
 
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
 
   const [listing, setListing] = useState<RawListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [buying, setBuying] = useState(false);
-  const [buyError, setBuyError] = useState('');
 
   // Fetch listing
   useEffect(() => {
@@ -69,38 +66,6 @@ export default function ListingDetailPage() {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
-
-  async function handleBuyNow() {
-    if (!userId) {
-      router.push(`/auth/login?redirectTo=/browse/${id}`);
-      return;
-    }
-
-    setBuying(true);
-    setBuyError('');
-
-    try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingId: id }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setBuyError(data.error ?? 'Failed to start checkout');
-        setBuying(false);
-        return;
-      }
-
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
-    } catch {
-      setBuyError('Something went wrong. Please try again.');
-      setBuying(false);
-    }
-  }
 
   if (loading) {
     return (
@@ -310,7 +275,7 @@ export default function ListingDetailPage() {
 
               <div className="mb-4 h-px" style={{ background: 'rgba(120,120,120,0.1)' }} />
 
-              {/* Buy button */}
+              {/* Contact / status */}
               {isSold ? (
                 <div className="rounded-xl py-4 text-center text-sm font-semibold text-zinc-600"
                   style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(120,120,120,0.1)' }}>
@@ -321,51 +286,45 @@ export default function ListingDetailPage() {
                   style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(120,120,120,0.1)' }}>
                   You own this listing
                 </div>
+              ) : userId ? (
+                /* Logged-in buyer — show seller contact directly */
+                listing.contact_email ? (
+                  <div
+                    className="rounded-xl border p-5"
+                    style={{ borderColor: 'rgba(100,200,100,0.2)', background: 'rgba(100,200,100,0.04)' }}
+                  >
+                    <p className="mb-3 text-[0.6rem] uppercase tracking-[0.3em] text-emerald-600">Contact seller</p>
+                    {listing.contact_name && (
+                      <p className="mb-1 text-sm font-medium text-zinc-300">{listing.contact_name}</p>
+                    )}
+                    <a
+                      href={`mailto:${listing.contact_email}`}
+                      className="block text-sm text-emerald-400/80 underline underline-offset-4 hover:text-emerald-300 transition"
+                    >
+                      {listing.contact_email}
+                    </a>
+                  </div>
+                ) : (
+                  <div className="rounded-xl py-4 text-center text-xs text-zinc-600"
+                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(120,120,120,0.1)' }}>
+                    No contact info provided
+                  </div>
+                )
               ) : (
-                <button
-                  onClick={handleBuyNow}
-                  disabled={buying}
-                  className="w-full rounded-full py-4 text-sm font-bold uppercase tracking-[0.18em] transition-all duration-200 disabled:opacity-50"
+                /* Not logged in */
+                <Link
+                  href={`/auth/login?redirectTo=/browse/${id}`}
+                  className="block w-full rounded-full py-4 text-center text-sm font-bold uppercase tracking-[0.18em] transition-all duration-200"
                   style={{
                     background: 'linear-gradient(135deg, #d0d0d0 0%, #a0a0a0 50%, #787878 100%)',
                     color: '#050505',
                     boxShadow: '0 0 30px rgba(180,180,180,0.2), 0 8px 20px rgba(0,0,0,0.4)',
                   }}
                 >
-                  {buying ? 'Redirecting…' : 'Buy Now'}
-                </button>
+                  Sign in to contact seller
+                </Link>
               )}
-
-              {buyError && (
-                <p className="mt-3 text-center text-xs text-rose-400">{buyError}</p>
-              )}
-
-              {!userId && !isSold && !isOwner && (
-                <p className="mt-3 text-center text-[0.65rem] text-zinc-600">
-                  <Link href={`/auth/login?redirectTo=/browse/${id}`}
-                    className="text-zinc-500 underline underline-offset-4 hover:text-zinc-300">
-                    Sign in
-                  </Link>{' '}
-                  to purchase this asset
-                </p>
-              )}
-
-              <p className="mt-5 text-center text-[0.6rem] text-zinc-700">
-                Secure checkout via Stripe. Funds held until transfer complete.
-              </p>
             </div>
-
-            {/* Contact card (only shown after purchase or to owner) */}
-            {(isOwner) && listing.contact_email && (
-              <div
-                className="rounded-[24px] border p-5"
-                style={{ background: 'rgba(12,12,12,0.97)', borderColor: 'rgba(120,120,120,0.1)' }}
-              >
-                <p className="mb-3 text-[0.65rem] uppercase tracking-[0.3em] text-zinc-600">Contact</p>
-                <p className="text-sm text-zinc-400">{listing.contact_name}</p>
-                <p className="text-sm text-zinc-500">{listing.contact_email}</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
