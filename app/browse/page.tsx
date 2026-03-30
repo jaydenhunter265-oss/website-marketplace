@@ -225,7 +225,7 @@ export default function BrowsePage() {
       case 'margin-desc': list.sort((a, b) => b.profitMargin - a.profitMargin); break;
     }
     return list;
-  }, [activeCategory, sortBy, maxPrice, search]);
+  }, [listings, activeCategory, sortBy, maxPrice, search]);
 
   return (
     <main className="app-shell">

@@ -71,7 +71,7 @@ export default function WhyChooseUs() {
             </h2>
           </div>
           <p className="text-lg text-gray-400 leading-relaxed max-w-2xl lg:ml-auto">
-            We built FuturiMarket because existing platforms weren't good enough for sophisticated buyers and sellers.
+            We built FuturiMarket because existing platforms were not good enough for sophisticated buyers and sellers.
             Every feature is designed around one goal: making premium digital asset transactions faster, safer, and smarter.
           </p>
         </div>
