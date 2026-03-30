@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 type FilterState = {
   revenueMin: number;
@@ -21,122 +21,129 @@ type AdvancedFiltersProps = {
 
 export type { FilterState };
 
-export default function AdvancedFilters({ filters, niches, monetizations, techStacks, onChange, onReset }: AdvancedFiltersProps) {
+function SelectFilter({
+  value, options, placeholder, onChange,
+}: {
+  value: string;
+  options: string[];
+  placeholder: string;
+  onChange: (v: string) => void;
+}) {
   return (
-    <section className="panel rounded-[32px] border border-white/10 p-6">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="w-full rounded-xl border border-white/[0.08] bg-black/40 px-4 py-2.5 text-sm text-gray-200 outline-none transition focus:border-silver-500/40 focus:ring-1 focus:ring-silver-500/20 cursor-pointer"
+    >
+      <option value="all">{placeholder}</option>
+      {options.map(o => <option key={o} value={o}>{o}</option>)}
+    </select>
+  );
+}
+
+function RangeRow({
+  label, minVal, maxVal, min, max, step, format, onMinChange, onMaxChange,
+}: {
+  label: string;
+  minVal: number; maxVal: number;
+  min: number; max: number; step: number;
+  format: (v: number) => string;
+  onMinChange: (v: number) => void;
+  onMaxChange: (v: number) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="section-label">{label}</p>
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-xs font-semibold text-white tabular-nums">{format(minVal)}</span>
+        <span className="text-xs font-semibold text-white tabular-nums">{format(maxVal)}</span>
+      </div>
+      <div className="space-y-2">
+        <label className="block">
+          <span className="sr-only">Min {label}</span>
+          <input
+            type="range" min={min} max={max} step={step} value={minVal}
+            onChange={e => onMinChange(Number(e.target.value))}
+            className="w-full"
+          />
+        </label>
+        <label className="block">
+          <span className="sr-only">Max {label}</span>
+          <input
+            type="range" min={min} max={max} step={step} value={maxVal}
+            onChange={e => onMaxChange(Number(e.target.value))}
+            className="w-full"
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+export default function AdvancedFilters({
+  filters, niches, monetizations, techStacks, onChange, onReset,
+}: AdvancedFiltersProps) {
+  return (
+    <section className="panel rounded-[24px] border border-white/[0.07] p-6">
+      {/* ── Header ── */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.34em] text-cyan-300/80">Advanced filters</p>
-          <h3 className="mt-2 text-xl font-semibold text-white">Precision deal scanner</h3>
+          <p className="section-label mb-1.5">Advanced Filters</p>
+          <h3 className="text-lg font-bold tracking-tight text-white">Precision Deal Scanner</h3>
         </div>
         <button
           onClick={onReset}
-          className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition hover:border-cyan-300/40"
+          className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-300 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
         >
-          Reset filters
+          Reset all
         </button>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-3xl bg-white/5 p-4">
-          <p className="text-[0.68rem] uppercase tracking-[0.28em] text-slate-400">Revenue range</p>
-          <div className="mt-3 space-y-2 text-sm text-slate-300">
-            <label className="block">
-              Min: ${filters.revenueMin.toLocaleString()}
-              <input
-                type="range"
-                min={2000}
-                max={30000}
-                step={500}
-                value={filters.revenueMin}
-                onChange={(event) => onChange({ ...filters, revenueMin: Number(event.target.value) })}
-                className="mt-2 w-full"
-              />
-            </label>
-            <label className="block">
-              Max: ${filters.revenueMax.toLocaleString()}
-              <input
-                type="range"
-                min={3000}
-                max={32000}
-                step={500}
-                value={filters.revenueMax}
-                onChange={(event) => onChange({ ...filters, revenueMax: Number(event.target.value) })}
-                className="mt-2 w-full"
-              />
-            </label>
-          </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Revenue range */}
+        <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4">
+          <RangeRow
+            label="Revenue Range"
+            minVal={filters.revenueMin} maxVal={filters.revenueMax}
+            min={2000} max={32000} step={500}
+            format={v => `$${v.toLocaleString()}`}
+            onMinChange={v => onChange({ ...filters, revenueMin: v })}
+            onMaxChange={v => onChange({ ...filters, revenueMax: v })}
+          />
         </div>
 
-        <div className="rounded-3xl bg-white/5 p-4">
-          <p className="text-[0.68rem] uppercase tracking-[0.28em] text-slate-400">Traffic range</p>
-          <div className="mt-3 space-y-2 text-sm text-slate-300">
-            <label className="block">
-              Min: {filters.trafficMin.toLocaleString()}
-              <input
-                type="range"
-                min={5000}
-                max={90000}
-                step={1000}
-                value={filters.trafficMin}
-                onChange={(event) => onChange({ ...filters, trafficMin: Number(event.target.value) })}
-                className="mt-2 w-full"
-              />
-            </label>
-            <label className="block">
-              Max: {filters.trafficMax.toLocaleString()}
-              <input
-                type="range"
-                min={10000}
-                max={110000}
-                step={1000}
-                value={filters.trafficMax}
-                onChange={(event) => onChange({ ...filters, trafficMax: Number(event.target.value) })}
-                className="mt-2 w-full"
-              />
-            </label>
-          </div>
+        {/* Traffic range */}
+        <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4">
+          <RangeRow
+            label="Traffic Range"
+            minVal={filters.trafficMin} maxVal={filters.trafficMax}
+            min={5000} max={110000} step={1000}
+            format={v => v.toLocaleString()}
+            onMinChange={v => onChange({ ...filters, trafficMin: v })}
+            onMaxChange={v => onChange({ ...filters, trafficMax: v })}
+          />
         </div>
 
-        <div className="grid gap-3">
-          <select
+        {/* Dropdowns */}
+        <div className="flex flex-col gap-3">
+          <SelectFilter
             value={filters.niche}
-            onChange={(event) => onChange({ ...filters, niche: event.target.value })}
-            className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100"
-          >
-            <option value="all">All niches</option>
-            {niches.map((niche) => (
-              <option key={niche} value={niche}>
-                {niche}
-              </option>
-            ))}
-          </select>
-
-          <select
+            options={niches}
+            placeholder="All niches"
+            onChange={v => onChange({ ...filters, niche: v })}
+          />
+          <SelectFilter
             value={filters.monetization}
-            onChange={(event) => onChange({ ...filters, monetization: event.target.value })}
-            className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100"
-          >
-            <option value="all">All monetization types</option>
-            {monetizations.map((entry) => (
-              <option key={entry} value={entry}>
-                {entry}
-              </option>
-            ))}
-          </select>
-
-          <select
+            options={monetizations}
+            placeholder="All monetization types"
+            onChange={v => onChange({ ...filters, monetization: v })}
+          />
+          <SelectFilter
             value={filters.techStack}
-            onChange={(event) => onChange({ ...filters, techStack: event.target.value })}
-            className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100"
-          >
-            <option value="all">All tech stacks</option>
-            {techStacks.map((stack) => (
-              <option key={stack} value={stack}>
-                {stack}
-              </option>
-            ))}
-          </select>
+            options={techStacks}
+            placeholder="All tech stacks"
+            onChange={v => onChange({ ...filters, techStack: v })}
+          />
         </div>
       </div>
     </section>
